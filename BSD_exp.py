@@ -1,8 +1,11 @@
 import math
 import MLib
 
+#This class of Elliptic Curves will store a curve y^2=x^3+ax+b as [a,b].
+#Also, whenever a size or modular coefficient is computed it will be stored along with
+#the size of the field it was found in.
+#Sizes of the curve mod p are computed using Euler's Criterion. Schoof's Algorithm is better but much more involved
 class elliptic_curve:
-
 	#saves the curve as y^2=x^3+ax+b
 	def __init__(self, a,b):
 		self.coef = [a,b]
@@ -10,13 +13,15 @@ class elliptic_curve:
 		self.mod_coeff = []
 
 	def size_modp(self, p):
+		
+		#If we already know this size, return it from the saved list.
 		if len(self.sizes)>0:
 			for n in range(len(self.sizes)):
 				if self.sizes[n][1]==p:
 					return self.sizes[n][0]
 
+		#Computes the size mod 2
 		N = 1
-
 		if p==2:
 			for x in range(2):
 				for y in range(2):
@@ -25,6 +30,8 @@ class elliptic_curve:
 			self.sizes.append([N,p])
 			return N
 
+		#If we don't know the size of E mod p where p is odd, then we use Euler's Criterion to check
+		#if x^3+ax+b is a square mod p or not.
 		for x in range(p):
 			X=(x**3) +self.coef[0]*x +self.coef[1]
 			L=MLib.euler_crit(X,p)
@@ -35,11 +42,11 @@ class elliptic_curve:
 			if N > p+3 +2*int(p**(0.5)):
 					break
 		self.sizes.append([N,p])
-		print(N,p," : ", N-(p+1), 2*(p**(0.5)))
+		print(p,N," : ", N-(p+1), 2*(p**(0.5))) #For visual progress reports while running.
 		return N
 
 
-
+	#Determines a modular coefficient associated to a prime.
 	def mod_coeffp(self, p):
 		if len(self.mod_coeff)>0:
 			for n in range(len(self.mod_coeff)):
@@ -51,7 +58,7 @@ class elliptic_curve:
 		self.mod_coeff.append([a,p])
 		return a
 
-	#q=p^n
+	#Determines the modular coefficient associated to q=p^n
 	def mod_coeffq(self,p,n):
 		if len(self.mod_coeff)>0:
 			for k in range(len(self.mod_coeff)):
@@ -71,6 +78,7 @@ class elliptic_curve:
 			self.mod_coeff.append([b,p**n])
 			return b
 
+#Simple sieve of Ero
 def seive(K):
 	L=[1 for n in range(K+1)]
 
@@ -89,6 +97,9 @@ def seive(K):
 			P.append(n)
 	return P
 
+#The definition of the Chebyshev-Type function which should asymptotically behave like rx
+#where r is the analytic rank of E (BSD => r is the rank of E). 
+#There may or may not be a nontrivial error to this approximamtion. This code is to see if it is big or not. 
 def cheb_E(E,x,P):
 	C=0
 	
@@ -110,7 +121,9 @@ def cheb_E(E,x,P):
 P=seive(1000000)
 E = elliptic_curve(-52,145)
 
-
+#runs through the Chebyshev values for x between 1 and whatever. It could be run faster by 
+#incimenting rather than recalculating, but this wouldn't speed things up much because the elliptic curve
+#itself stores this info. The biggest time-hog is computing the size of E mod p.
 f = open('curve_-52_145.txt','w')
 f.write('-52,145, Rank = 2 \n')
 for x in range(1,10001):
